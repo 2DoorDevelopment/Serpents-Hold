@@ -66,8 +66,8 @@ def register(body: RegisterBody, request: Request):
 
     if len(body.username) < 3 or len(body.username) > MAX_USERNAME_LEN:
         raise HTTPException(400, f"Username must be 3–{MAX_USERNAME_LEN} characters")
-    if len(body.password) < 6 or len(body.password) > MAX_PASSWORD_LEN:
-        raise HTTPException(400, f"Password must be 6–{MAX_PASSWORD_LEN} characters")
+    if len(body.password) < 8 or len(body.password) > MAX_PASSWORD_LEN:
+        raise HTTPException(400, f"Password must be 8–{MAX_PASSWORD_LEN} characters")
     if len(body.email) > MAX_EMAIL_LEN:
         raise HTTPException(400, "Email too long")
 
