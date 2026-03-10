@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SERPENT'S HOLD — Underground Market</title>
+  <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+  <div id="app">
+
+    <!-- NAVBAR -->
+    <nav id="navbar">
+      <div class="nav-logo" onclick="Router.navigate('/')">
+        <div class="nav-logo-icon">⬡</div>
+        <div>
+          <div class="nav-logo-text">SERPENT'S HOLD</div>
+          <span class="nav-logo-sub">Underground Market · Alpha</span>
+        </div>
+      </div>
+
+      <!-- Hamburger (mobile only) -->
+      <button class="nav-hamburger" id="nav-hamburger" style="display:none" onclick="toggleMobileNav()" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+
+      <ul class="nav-links" id="nav-links">
+        <li><a class="nav-link" data-page="/" onclick="navTo('/')">MARKET</a></li>
+        <li><a class="nav-link" data-page="/missing-items" onclick="navTo('/missing-items')">MISSING ITEMS</a></li>
+        <li><a class="nav-link" data-page="/search" onclick="navTo('/search')">PILOTS</a></li>
+        <li>
+          <a class="nav-link" data-page="/profile" onclick="navTo('/profile')" id="nav-user" style="color:var(--amber)" class="hidden">PILOT</a>
+        </li>
+        <li>
+          <a class="nav-link" data-page="/profile" onclick="profileTab('messages');navTo('/profile')" id="nav-messages" style="position:relative">
+            MESSAGES
+            <span class="nav-badge hidden" id="unread-badge">0</span>
+          </a>
+        </li>
+        <li id="nav-notifications" class="hidden">
+          <a class="nav-link" onclick="navTo('/profile');setTimeout(()=>profileTab('notifications'),200)" style="position:relative;cursor:pointer">
+            🔔
+            <span class="nav-badge hidden" id="notif-badge">0</span>
+          </a>
+        </li>
+        <li>
+          <a class="nav-link" data-page="/admin" onclick="navTo('/admin')" id="nav-admin" class="hidden">ADMIN</a>
+        </li>
+        <li id="nav-mod" class="hidden">
+          <a class="nav-link" data-page="/mod" onclick="navTo('/mod')" style="color:var(--success-bright);position:relative">
+            MOD
+            <span class="nav-badge hidden" id="mod-report-badge" style="background:var(--error)">0</span>
+          </a>
+        </li>
+        <li id="nav-auth">
+          <button class="btn btn-primary btn-sm" onclick="showAuthModal('login')">SIGN IN</button>
+        </li>
+      </ul>
+    </nav>
+
+    <!-- MAIN CONTENT -->
+    <main id="main-content">
+      <div class="loading-overlay"><div class="spinner"></div> INITIALIZING...</div>
+    </main>
+
+  </div>
+
+  <!-- TOAST CONTAINER -->
+  <div id="toast-container"></div>
+
+  <!-- SCRIPTS -->
+  <script src="/js/api.js"></script>
+  <script src="/js/pages.js"></script>
+  <script src="/js/modals.js"></script>
+  <script>
+    // ============================================================
+    // Mobile nav helpers
+    // ============================================================
+    function toggleMobileNav() {
+      const links = document.getElementById('nav-links');
+      links.classList.toggle('open');
+    }
+    function navTo(path) {
+      document.getElementById('nav-links').classList.remove('open');
+      Router.navigate(path);
+    }
+    function checkHamburger() {
+      const burger = document.getElementById('nav-hamburger');
+      if (window.innerWidth <= 768) burger.style.display = 'flex';
+      else { burger.style.display = 'none'; document.getElementById('nav-links').classList.remove('open'); }
+    }
+    window.addEventListener('resize', checkHamburger);
+    checkHamburger();
+
+    // ============================================================
+    // Route Registration & Init
+    // ============================================================
+    Router.register('/', renderMarketplace);
+    Router.register('/listing', renderListingDetail);
+    Router.register('/profile', renderProfile);
+    Router.register('/seller', renderSellerStorefront);
+    Router.register('/org', renderOrgPage);
+    Router.register('/admin', renderAdmin);
+    Router.register('/mod', renderModPanel);
+    Router.register('/search', renderUserSearch);
+    Router.register('/missing-items', (parts) => {
+      const content = document.getElementById('main-content');
+      content.innerHTML = `<div class="loading-overlay"><div class="spinner"></div></div>`;
+      renderMissingItemsWidget(content);
+    });
+    Router.register('/404', () => {
+      document.getElementById('main-content').innerHTML = `
+        <div class="empty-state" style="margin-top:4rem">
+          <div class="empty-icon" style="font-size:4rem">◈</div>
+          <div class="empty-title">404 — SIGNAL LOST</div>
+          <div class="empty-sub">This location doesn't exist in the verse</div>
+          <button class="btn btn-secondary btn-sm" style="margin-top:1.5rem" onclick="Router.navigate('/')">RETURN TO MARKET</button>
+        </div>`;
+    });
+
+    // Handle /listing/:id
+    const origNavigate = Router.navigate.bind(Router);
+    Router.navigate = function(path, push = true) {
+      if (push) history.pushState({}, '', path);
+      this.current = path;
+      document.querySelectorAll('.nav-link').forEach(a => {
+        a.classList.toggle('active', a.dataset.page === path || path.startsWith(a.dataset.page + '/'));
+      });
+      const parts = path.split('/').filter(Boolean);
+      const base = '/' + (parts[0] || '');
+      const handler = this.routes[path] || this.routes[base] || this.routes['/404'];
+      if (handler) handler(parts);
+    };
+    window.addEventListener('popstate', () => Router.navigate(location.pathname, false));
+
+    // Init
+    updateNavForAuth();
+    if (Auth.isLoggedIn) {
+      Auth.refreshUser();  // sync role/ban state from server on page load
+      startPolling();
+    }
+    Router.navigate(location.pathname, false);
+  </script>
+</body>
+</html>
