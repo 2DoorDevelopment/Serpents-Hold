@@ -52,6 +52,7 @@ def compute_trust_score(
         score += min(count_score, 10)
 
     # ── Account age (cap 1 year = 10pts) ─────────────────────────────────────
+    age_days = 0
     try:
         created = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
         if created.tzinfo is None:
@@ -91,7 +92,7 @@ def compute_trust_score(
             "deals":           round(min(25 * math.log10(completed_deals + 1) / math.log10(101), 25), 1) if completed_deals > 0 else 0,
             "rating_quality":  round((rating_avg / 5.0) * 25, 1) if (rating_avg and rating_count >= 3) else 0,
             "rating_volume":   round(min(10 * math.log10(rating_count + 1) / math.log10(51), 10), 1) if rating_count > 0 else 0,
-            "account_age":     round(min((age_days if 'age_days' in dir() else 0) / 365.0, 1.0) * 10, 1),
+            "account_age":     round(min(age_days / 365.0, 1.0) * 10, 1),
             "dispute_penalty": -round(min((disputed_deals / total_deals) * 15, 15), 1) if total_deals >= 3 and disputed_deals > 0 else 0,
         }
     }
