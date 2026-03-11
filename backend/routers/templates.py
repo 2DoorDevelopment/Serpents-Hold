@@ -55,7 +55,12 @@ class TemplateUpdate(BaseModel):
 def list_templates(user=Depends(get_current_user)):
     with get_conn() as conn:
         rows = conn.execute("""
-            SELECT id, name, category, listing_type, price, currency, created_at, updated_at
+            SELECT id, name,
+                   json_extract(fields, '$.category')     AS category,
+                   json_extract(fields, '$.listing_type') AS listing_type,
+                   json_extract(fields, '$.price')        AS price,
+                   json_extract(fields, '$.currency')     AS currency,
+                   created_at, updated_at
             FROM listing_templates
             WHERE user_id = ?
             ORDER BY updated_at DESC
