@@ -4,8 +4,8 @@
 
 const API_BASE = '/api';
 
-let _authToken = localStorage.getItem('sc_token') || null;
-let _currentUser = JSON.parse(localStorage.getItem('sc_user') || 'null');
+let _authToken = localStorage.getItem('sc_token') || sessionStorage.getItem('sc_token') || null;
+let _currentUser = JSON.parse(localStorage.getItem('sc_user') || sessionStorage.getItem('sc_user') || 'null');
 
 const Auth = {
   get token() { return _authToken; },
@@ -14,11 +14,17 @@ const Auth = {
   get isAdmin() { return _currentUser?.role === 'admin'; },
   get isMod()   { return _currentUser?.role === 'admin' || _currentUser?.role === 'moderator'; },
 
-  setSession(token, user) {
+  setSession(token, user, remember = true) {
     _authToken = token;
     _currentUser = user;
-    localStorage.setItem('sc_token', token);
-    localStorage.setItem('sc_user', JSON.stringify(user));
+    // Clear both storages first to avoid stale entries
+    localStorage.removeItem('sc_token');
+    localStorage.removeItem('sc_user');
+    sessionStorage.removeItem('sc_token');
+    sessionStorage.removeItem('sc_user');
+    const store = remember ? localStorage : sessionStorage;
+    store.setItem('sc_token', token);
+    store.setItem('sc_user', JSON.stringify(user));
     updateNavForAuth();
     startPolling();
   },
@@ -28,6 +34,8 @@ const Auth = {
     _currentUser = null;
     localStorage.removeItem('sc_token');
     localStorage.removeItem('sc_user');
+    sessionStorage.removeItem('sc_token');
+    sessionStorage.removeItem('sc_user');
     updateNavForAuth();
     stopPolling();
   },
@@ -37,7 +45,12 @@ const Auth = {
     try {
       const user = await api.get('/auth/me');
       _currentUser = user;
-      localStorage.setItem('sc_user', JSON.stringify(user));
+      // Update whichever storage holds the active session
+      if (localStorage.getItem('sc_token')) {
+        localStorage.setItem('sc_user', JSON.stringify(user));
+      } else {
+        sessionStorage.setItem('sc_user', JSON.stringify(user));
+      }
       updateNavForAuth();
     } catch (e) {
       if (e.status === 401) this.clearSession();

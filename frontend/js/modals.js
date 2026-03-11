@@ -33,6 +33,10 @@ function renderAuthForm(mode) {
         <label class="form-label">Password</label>
         <input type="password" class="form-input" id="auth-password" autocomplete="current-password">
       </div>
+      <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem">
+        <input type="checkbox" id="auth-remember" checked style="cursor:pointer;accent-color:var(--amber)">
+        <label for="auth-remember" style="font-family:var(--font-mono);font-size:0.75rem;color:var(--text-secondary);cursor:pointer;margin:0">Remember me</label>
+      </div>
       <div id="auth-error" class="form-error hidden"></div>
       <button class="btn btn-primary btn-full" style="margin-top:0.5rem;clip-path:none" onclick="submitLogin()">SIGN IN</button>
       <div class="auth-divider"><span>OR</span></div>
@@ -74,6 +78,7 @@ function renderAuthForm(mode) {
 async function submitLogin() {
   const username = document.getElementById('auth-username').value.trim();
   const password = document.getElementById('auth-password').value;
+  const remember = document.getElementById('auth-remember')?.checked ?? true;
   const errEl = document.getElementById('auth-error');
   errEl.classList.add('hidden');
 
@@ -81,7 +86,7 @@ async function submitLogin() {
 
   try {
     const data = await api.post('/auth/login', { username, password });
-    Auth.setSession(data.token, data.user);
+    Auth.setSession(data.token, data.user, remember);
     closeModal();
     showToast(`Welcome back, @${data.user.username}`, 'success');
     Router.navigate(location.pathname, false);

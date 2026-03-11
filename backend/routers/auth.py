@@ -98,7 +98,11 @@ def login(body: LoginBody, request: Request):
             (body.username, body.username),
         ).fetchone()
 
-    if not user or not verify_password(body.password, user["password_hash"]):
+    try:
+        pw_ok = bool(user) and verify_password(body.password, user["password_hash"])
+    except Exception:
+        pw_ok = False
+    if not pw_ok:
         raise HTTPException(401, "Invalid credentials")
     if user["banned"]:
         raise HTTPException(403, "Account banned")
