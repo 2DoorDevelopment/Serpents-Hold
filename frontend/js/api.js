@@ -78,6 +78,7 @@ const api = {
   get: (path) => apiFetch('GET', path),
   post: (path, data, isForm) => apiFetch('POST', path, data, isForm),
   put: (path, data, isForm) => apiFetch('PUT', path, data, isForm),
+  patch: (path, data) => apiFetch('PATCH', path, data),
   delete: (path) => apiFetch('DELETE', path),
 };
 

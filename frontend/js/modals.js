@@ -488,7 +488,6 @@ async function submitListingForm(editId = null) {
         Router.navigate(`/listing/${listing.id}`);
       }
       return;
-      return;
     }
     closeModal();
     Router.navigate(location.pathname, false);
