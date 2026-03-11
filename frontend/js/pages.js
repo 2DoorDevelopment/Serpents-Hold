@@ -1517,15 +1517,9 @@ function adminEditItem(id, name, category, subcategory, description, image_url) 
 
 async function adminToggleItem(id) {
   try {
-    await api.put(`/item-types/${id}/toggle`);  // PATCH not PUT but api.put works for toggle
+    await api.patch(`/item-types/${id}/toggle`);
     adminTab('items');
-  } catch {
-    // Try PATCH directly
-    try {
-      await apiFetch('PATCH', `/item-types/${id}/toggle`);
-      adminTab('items');
-    } catch (e) { showToast(e.message, 'error'); }
-  }
+  } catch (e) { showToast(e.message, 'error'); }
 }
 
 async function adminDeleteItem(id) {

@@ -216,8 +216,8 @@ def get_listing(listing_id: int, current_user: Optional[dict] = Depends(get_opti
         # Seller trust score
         stats = conn.execute("""
             SELECT
-                COUNT(*) FILTER (WHERE status = 'completed') AS completed_deals,
-                COUNT(*) FILTER (WHERE status = 'disputed')  AS disputed_deals
+                SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) AS completed_deals,
+                SUM(CASE WHEN status = 'disputed'  THEN 1 ELSE 0 END) AS disputed_deals
             FROM deals WHERE seller_id = ?
         """, (listing["seller_id"],)).fetchone()
         rating = conn.execute("""

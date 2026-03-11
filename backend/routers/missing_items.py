@@ -123,7 +123,7 @@ def unvote(req_id: int, user=Depends(get_current_user)):
         if not existing:
             raise HTTPException(404, "No vote to remove")
         conn.execute("DELETE FROM missing_item_votes WHERE user_id=? AND request_id=?", (user["id"], req_id))
-        conn.execute("UPDATE missing_item_requests SET votes = MAX(0, votes - 1) WHERE id=?", (req_id,))
+        conn.execute("UPDATE missing_item_requests SET votes = CASE WHEN votes > 0 THEN votes - 1 ELSE 0 END WHERE id=?", (req_id,))
     return {"message": "Vote removed"}
 
 

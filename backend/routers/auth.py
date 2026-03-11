@@ -339,8 +339,8 @@ def public_profile(username: str):
         # Deal stats
         deal_stats = conn.execute("""
             SELECT
-                COUNT(*) FILTER (WHERE status = 'completed') AS completed_deals,
-                COUNT(*) FILTER (WHERE status = 'disputed')  AS disputed_deals
+                SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) AS completed_deals,
+                SUM(CASE WHEN status = 'disputed'  THEN 1 ELSE 0 END) AS disputed_deals
             FROM deals WHERE seller_id = ?
         """, (user["id"],)).fetchone()
         user["completed_deals"] = deal_stats["completed_deals"]
