@@ -219,36 +219,39 @@ async def discord_callback(code: str = None, error: str = None):
     if not DISCORD_CLIENT_ID or not DISCORD_CLIENT_SECRET:
         return RedirectResponse("/#discord-error=not_configured")
 
-    async with httpx.AsyncClient(timeout=15) as client:
-        # Exchange authorization code for access token
-        token_resp = await client.post(
-            DISCORD_TOKEN_URL,
-            data={
-                "client_id":     DISCORD_CLIENT_ID,
-                "client_secret": DISCORD_CLIENT_SECRET,
-                "grant_type":    "authorization_code",
-                "code":          code,
-                "redirect_uri":  DISCORD_REDIRECT_URI,
-            },
-            headers={"Content-Type": "application/x-www-form-urlencoded"},
-        )
-        if token_resp.status_code != 200:
-            return RedirectResponse("/#discord-error=token_exchange_failed")
+    try:
+        async with httpx.AsyncClient(timeout=15) as client:
+            # Exchange authorization code for access token
+            token_resp = await client.post(
+                DISCORD_TOKEN_URL,
+                data={
+                    "client_id":     DISCORD_CLIENT_ID,
+                    "client_secret": DISCORD_CLIENT_SECRET,
+                    "grant_type":    "authorization_code",
+                    "code":          code,
+                    "redirect_uri":  DISCORD_REDIRECT_URI,
+                },
+                headers={"Content-Type": "application/x-www-form-urlencoded"},
+            )
+            if token_resp.status_code != 200:
+                return RedirectResponse("/#discord-error=token_exchange_failed")
 
-        token_data    = token_resp.json()
-        access_token  = token_data.get("access_token")
-        if not access_token:
-            return RedirectResponse("/#discord-error=no_access_token")
+            token_data    = token_resp.json()
+            access_token  = token_data.get("access_token")
+            if not access_token:
+                return RedirectResponse("/#discord-error=no_access_token")
 
-        # Fetch Discord user profile
-        user_resp = await client.get(
-            DISCORD_USER_URL,
-            headers={"Authorization": f"Bearer {access_token}"},
-        )
-        if user_resp.status_code != 200:
-            return RedirectResponse("/#discord-error=user_fetch_failed")
+            # Fetch Discord user profile
+            user_resp = await client.get(
+                DISCORD_USER_URL,
+                headers={"Authorization": f"Bearer {access_token}"},
+            )
+            if user_resp.status_code != 200:
+                return RedirectResponse("/#discord-error=user_fetch_failed")
 
-        discord_user = user_resp.json()
+            discord_user = user_resp.json()
+    except httpx.RequestError:
+        return RedirectResponse("/#discord-error=token_exchange_failed")
 
     discord_id  = discord_user["id"]
     discord_tag = discord_user.get("username", "")          # e.g. "NoahX"

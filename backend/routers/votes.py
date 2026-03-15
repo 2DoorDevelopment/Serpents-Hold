@@ -39,11 +39,16 @@ def cast_vote(listing_id: int, body: VoteBody, current_user: dict = Depends(get_
                     (current_user["id"], listing_id),
                 )
                 # Undo the old vote from the counter
-                col = "upvotes" if old_vote == 1 else "downvotes"
-                conn.execute(
-                    f"UPDATE listings SET {col} = MAX(0, {col} - 1) WHERE id = ?",
-                    (listing_id,),
-                )
+                if old_vote == 1:
+                    conn.execute(
+                        "UPDATE listings SET upvotes = MAX(0, upvotes - 1) WHERE id = ?",
+                        (listing_id,),
+                    )
+                else:
+                    conn.execute(
+                        "UPDATE listings SET downvotes = MAX(0, downvotes - 1) WHERE id = ?",
+                        (listing_id,),
+                    )
                 action = "removed"
             else:
                 # Switching vote direction
@@ -51,12 +56,16 @@ def cast_vote(listing_id: int, body: VoteBody, current_user: dict = Depends(get_
                     "UPDATE listing_votes SET vote = ? WHERE user_id = ? AND listing_id = ?",
                     (body.vote, current_user["id"], listing_id),
                 )
-                old_col = "upvotes" if old_vote == 1 else "downvotes"
-                new_col = "upvotes" if body.vote == 1 else "downvotes"
-                conn.execute(
-                    f"UPDATE listings SET {old_col} = MAX(0, {old_col} - 1), {new_col} = {new_col} + 1 WHERE id = ?",
-                    (listing_id,),
-                )
+                if old_vote == 1:
+                    conn.execute(
+                        "UPDATE listings SET upvotes = MAX(0, upvotes - 1), downvotes = downvotes + 1 WHERE id = ?",
+                        (listing_id,),
+                    )
+                else:
+                    conn.execute(
+                        "UPDATE listings SET downvotes = MAX(0, downvotes - 1), upvotes = upvotes + 1 WHERE id = ?",
+                        (listing_id,),
+                    )
                 action = "switched"
         else:
             # New vote
@@ -64,11 +73,16 @@ def cast_vote(listing_id: int, body: VoteBody, current_user: dict = Depends(get_
                 "INSERT INTO listing_votes (user_id, listing_id, vote) VALUES (?, ?, ?)",
                 (current_user["id"], listing_id, body.vote),
             )
-            col = "upvotes" if body.vote == 1 else "downvotes"
-            conn.execute(
-                f"UPDATE listings SET {col} = {col} + 1 WHERE id = ?",
-                (listing_id,),
-            )
+            if body.vote == 1:
+                conn.execute(
+                    "UPDATE listings SET upvotes = upvotes + 1 WHERE id = ?",
+                    (listing_id,),
+                )
+            else:
+                conn.execute(
+                    "UPDATE listings SET downvotes = downvotes + 1 WHERE id = ?",
+                    (listing_id,),
+                )
             action = "cast"
 
         row = conn.execute(
